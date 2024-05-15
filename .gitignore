@@ -1,0 +1,8 @@
+package-lock.json
+pnpm-lock.yaml
+yarn.lock
+.idea/
+.vscode/
+node_modules/
+.env
+google-credentials.json

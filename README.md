@@ -5,8 +5,8 @@ Un service en arrière-plan qui synchronise votre emploi du temps Pronote sur Go
 
 ## Installation
 
-> Vous aurez besoin d'une version récente de [Node.js](https://nodejs.org/en/)
-> Vous pouvez installer [pm2](https://www.npmjs.com/package/pm2) pour démarrer le service en arrière-plan
+> Vous aurez besoin d'une version récente de [Node.js](https://nodejs.org/en/)  
+> Vous pouvez installer [pm2](https://www.npmjs.com/package/pm2) pour démarrer le service en arrière-plan  
 > Vous pouvez installer [ntfy](https://ntfy.sh/) pour recevoir des notifications lors de certaines actions apportées à l'EDT
 
 1. Cloner le dépôt
@@ -54,7 +54,7 @@ Toutes les demies-heures (x:00 et x:30) entre 6h et 21h, les cours sur la semain
 
 ## Personnalisation du nom des cours
 
-Vous pouvez modifier le fichier `utils/classnames.js` pour personnaliser le nom affichée dans votre agenda pour chacune de vos matières. Certaines matières sont déjà préconfigurées et seront utilisées sans modification à effectuer.
+Vous pouvez modifier le fichier `utils/classnames.js` pour personnaliser le nom affiché dans votre agenda pour chacune de vos matières. Certaines matières sont déjà préconfigurées et seront utilisées sans modification à effectuer.
 
 ## Licence
 

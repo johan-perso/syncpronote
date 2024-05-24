@@ -173,6 +173,7 @@ async function main(){
 
 		// Retourner le calendrier
 		console.log(`Emploi du temps récupéré ! (${(performance.now() - perf).toFixed(2)}ms)`)
+		console.log(calendar)
 		return calendar
 	}
 
@@ -223,14 +224,14 @@ async function main(){
 				// Si l'événement n'est pas trouvé dans l'EDT Pronote et qu'il a un ID valide (= ajouté par le bot)
 				if(!eventFromPronoteEdt && uniqueId){
 					var relativeDate = dateToString(new Date(event.start))
-					if(new Date(event.start).getTime() < Date.now()) sendNtfy("Cours supprimé", `Le cours "${unstrikethrough(event.summary.replace(" (annulé)", ""))}" ${relativeDate} à ${new Date(event.start).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" })} est annulé`)
+					if(new Date(event.start).getTime() > Date.now()) sendNtfy("Cours supprimé", `Le cours "${unstrikethrough(event.summary.replace(" (annulé)", ""))}" ${relativeDate} à ${new Date(event.start).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" })} est annulé`)
 					listChanges.push({ type: "delete-in-google", event: event })
 				}
 
 				// Si l'événement est trouvé dans l'EDT Pronote, mais qu'il est maintenant annulé
 				else if(eventFromPronoteEdt && eventFromPronoteEdt.canceled){
 					var relativeDate = dateToString(new Date(event.start))
-					if(new Date(event.start).getTime() < Date.now()) sendNtfy("Cours annulé", `Le cours "${classnameParser(eventFromPronoteEdt.name)}" ${relativeDate} à ${new Date(event.start).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" })} est annulé`)
+					if(new Date(event.start).getTime() > Date.now()) sendNtfy("Cours annulé", `Le cours "${classnameParser(eventFromPronoteEdt.name)}" ${relativeDate} à ${new Date(event.start).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" })} est annulé`)
 					listChanges.push({ type: "delete-in-google", event: event })
 				}
 
@@ -311,7 +312,7 @@ async function main(){
 						}
 
 						var relativeDate = dateToString(new Date(event.start))
-						if(new Date(event.start).getTime() < Date.now()) sendNtfy("Cours modifié", `Le cours "${classnameParser(event.name)}" ${relativeDate} à ${event.start.toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" })} a été modifié`)
+						if(new Date(event.start).getTime() > Date.now()) sendNtfy("Cours modifié", `Le cours "${classnameParser(event.name)}" ${relativeDate} à ${event.start.toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" })} a été modifié`)
 
 						await calendarAPI.events.update({
 							calendarId: calendarID,

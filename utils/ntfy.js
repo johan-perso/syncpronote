@@ -3,7 +3,7 @@ const envParser = require("./env-parser.js")
 var dotenv = envParser.parseEnv(path.join(__dirname, "..", ".env"))
 
 var url = dotenv.NTFY_URL
-if(!url.endsWith("/")) url += "/"
+if(url && !url.endsWith("/")) url += "/"
 
 module.exports = async function(title, message){
 	if(!url) return console.log("Envois d'alertes via ntfy désactivé (valeur manquante dans le .env)")

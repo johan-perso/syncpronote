@@ -180,7 +180,7 @@ async function main(){
 	// Vérif périodique : modifs dans l'EDT
 	console.log("En attente de la prochaine vérification périodique (toutes les 30 minutes entre 6h et 21h)...")
 	CronJob.from({
-		cronTime: "0,30 6-21 * * *",
+		cronTime: "00,30 6-21 * * *",
 		onTick: async function(){
 			console.log("!!! Vérification périodique des changements dans l'EDT !!!")
 			console.log(`!!! ${new Date().toLocaleString("fr-FR")} !!!`)
@@ -210,7 +210,7 @@ async function main(){
 			var listChanges = []
 			for(const event of events.data.items){
 				// Parser certaines informations à partir de l'événement
-				var linesDescription = event.description.split("\n") || []
+				var linesDescription = event?.description?.split("\n") || []
 				var uniqueId = linesDescription.find(line => line.startsWith("ID : "))?.replace("ID : ", "") || null
 				var groups = linesDescription.find(line => line.startsWith("Groupe : "))?.replace("Groupe : ", "") || ""
 				var teachers = linesDescription.find(line => line.startsWith("Professeur : "))?.replace("Professeur : ", "") || ""
@@ -249,7 +249,7 @@ async function main(){
 			// Passer sur tout les éléments de l'EDT Pronote, et vérifier par rapport à l'agenda Google
 			for(const eventFromPronoteEdt of calendar){
 				// Trouver l'événement correspondant dans l'agenda Google
-				const event = events.data.items.find(e => e.description.split("\nID : ")?.[1] == eventFromPronoteEdt.id)
+				const event = events.data.items.find(e => e.description && e.description.split("\nID : ")?.[1] == eventFromPronoteEdt.id)
 
 				// Si l'événement n'est pas trouvé dans l'agenda Google, et que le cours n'est pas annulé
 				if(!event && !eventFromPronoteEdt.canceled) listChanges.push({ type: "add-in-google", event: eventFromPronoteEdt })

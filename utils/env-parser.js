@@ -10,6 +10,7 @@ module.exports.parseEnv = function (envPath) {
 	env.split("\n").forEach(line => {
 		if(line.startsWith("#")) return // on ignore si c'est un commentaire
 		var [key, value] = line.split("=")
+		if(!value) return
 		if(value.startsWith("\"") && value.endsWith("\"")) value = value.slice(1, -1) // enlever les " au début et à la fin si y'en a
 		if(value.includes("#")) value = value.split("#")[0] // enlever le commentaire s'il est dans la valeur
 		envParsed[key] = value.replace(/\\n/g, "\n") // remplacer les \n par des vrais sauts de ligne

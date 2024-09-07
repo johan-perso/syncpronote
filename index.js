@@ -56,6 +56,9 @@ function getWeekBounds(){
 	end.setDate(start.getDate() + (todayOfWeek == 0 ? 6 : 5) + (7 * 3)) // samedi dans 3 semaines
 	end.setHours(23, 59, 59, 999)
 
+	// Si le premier jour est avant le 2 septembre, on commence à partir du 2 septembre
+	if(start.getTime() < new Date(today.getFullYear(), 8, 2).getTime()) start.setTime(new Date(today.getFullYear(), 8, 2).getTime())
+
 	// On retourne les dates
 	return {
 		start: start,

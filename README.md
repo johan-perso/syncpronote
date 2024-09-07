@@ -33,7 +33,7 @@ node auth-google.js
 # Important : un fichier `google-credentials.json` doit exister à la racine du projet, il doit correspondre au fichier JSON téléchargé sur le dashboard Google (détails d'authentification du client, choissisez "application de bureau")
 
 nano .env
-# Ajouter une ligne `GOOGLE_CALENDAR_ID=` avec l'identifiant de l'agenda Google qui contiendra les nouveaux événements (similaire à une adresse mail)
+# Ajouter une ligne `GOOGLE_CALENDAR_ID=` avec l'identifiant de l'agenda Google qui contiendra les nouveaux événements (format similaire à celui d'une adresse mail)
 # Vous pouvez ajouter `NTFY_URL` et `NTFY_USERNAME` + `NTFY_PASSWORD` pour recevoir des notifications lors de la modification ou suppression d'un cours. Le topic utilisé sera `pronote`.
 ```
 
@@ -52,9 +52,13 @@ Toutes les demies-heures (x:00 et x:30) entre 6h et 21h, les cours sur la semain
 > Seules les entrées considérées comme des cours peuvent être mises à jour ou supprimées. Les autres événements du calendrier ne seront pas touchés.
 
 
-## Personnalisation du nom des cours
+## Personnalisation (avancé)
 
-Vous pouvez modifier le fichier `utils/classnames.js` pour personnaliser le nom affiché dans votre agenda pour chacune de vos matières. Certaines matières sont déjà préconfigurées et seront utilisées sans modification à effectuer.
+Personnaliser les heures des cours :
+> Le fichier `utils/custom-hours` permet de changer les heures de début et de fin des cours annoncées par Pronote. Vous devrez modifier les valeurs pour les faire correspondre à votre emploi du temps.
+
+Personnaliser le nom des matières :
+> Vous pouvez modifier le fichier `utils/classnames.js` pour personnaliser le nom affiché dans votre agenda pour chacune de vos matières. Certaines matières sont déjà préconfigurées et seront affichées dans votre agenda sans modification à effectuer.
 
 ## Licence
 

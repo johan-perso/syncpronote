@@ -6,6 +6,7 @@ const { google } = require("googleapis")
 const envParser = require("./utils/env-parser")
 const classnameParser = require("./utils/classnames")
 const sendNtfy = require("./utils/ntfy")
+const customHours = require("./utils/custom-hours")
 const { unstrikethrough, strikethrough } = require("./utils/strikethrough")
 
 var dotenv = envParser.parseEnv(path.join(__dirname, ".env"))
@@ -203,6 +204,12 @@ async function main(){
 				console.error("Impossible de récupérer les événements de l'agenda Google :", e)
 			})
 			console.log(`Agenda Google récupéré ! (${(performance.now() - perf).toFixed(2)}ms)`)
+
+			// Remplacer l'heure annoncée par Pronote par l'heure réelle, si disponible
+			calendar.forEach(event => {
+				event.start = customHours.correctTime(event.start, "start")
+				event.end = customHours.correctTime(event.end, "end")
+			})
 
 			// Passer sur tout les éléments de l'agenda Google, et vérifier par rapport à l'EDT Pronote
 			perf = performance.now()

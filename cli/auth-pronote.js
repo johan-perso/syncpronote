@@ -1,4 +1,4 @@
-var { authenticatePronoteQRCode } = require("pawnote")
+var { loginQrCode, createSessionHandle } = require("pawnote")
 var readline = require("readline")
 var path = require("path")
 const envParser = require("../utils/env-parser")
@@ -23,13 +23,12 @@ async function askString(question) {
 	console.log("Vous devrez entrer le code PIN ainsi que la valeur du QR code (via une extension par exemple) ici.\n")
 
 	// Demander les infos
-	const code = await askString("Code PIN: ")
-	const qr = await askString("Valeur du QR code: ")
+	const pin = await askString("Code PIN: ")
+	var qr = await askString("Valeur du QR code: ")
 
 	// Parse les infos du QR en JSON
-	var qrData
 	try {
-		qrData = JSON.parse(qr)
+		qr = JSON.parse(qr)
 	} catch (e) {
 		console.error("Erreur: Le QR code n'est pas un JSON valide.")
 		return
@@ -37,20 +36,13 @@ async function askString(question) {
 
 	// S'authentifier
 	console.log("\nAuthentification...")
-	var uuid = randomUUID()
-	const pronote = await authenticatePronoteQRCode({
-		pinCode: code,
-		dataFromQRCode: {
-			jeton: qrData.jeton,
-			login: qrData.login,
-			url: qrData.url
-		},
-		deviceUUID: uuid
-	}).catch(e => {
+	var deviceUUID = randomUUID()
+	const pronoteHandler = createSessionHandle()
+	const pronote = await loginQrCode(pronoteHandler, { pin, qr, deviceUUID }).catch(e => {
 		console.error("Impossible de s'authentifier:", e)
 		process.exit(1)
 	})
-	console.log(`Connecté à Pronote en tant que ${pronote.studentName} !`)
+	console.log(`Connecté à Pronote en tant que ${pronote.username} !`)
 
 	// Demander si on enregistre les infos
 	const saveDetails = await askString("\nVoulez-vous enregistrer les détails de reconnexion (requis pour utiliser le service) ? (Y/n): ")
@@ -58,11 +50,11 @@ async function askString(question) {
 		console.log("Enregistrement des détails...")
 
 		var env = envParser.parseEnv(path.join(__dirname, "..", ".env"))
-		env.PRONOTE_ROOT_URL = pronote.pronoteRootURL
-		env.PRONOTE_TOKEN = pronote.nextTimeToken
-		env.PRONOTE_ACCOUNT_TYPE_ID = pronote.accountTypeID
+		env.PRONOTE_ROOT_URL = pronote.url
+		env.PRONOTE_TOKEN = pronote.token
+		env.PRONOTE_ACCOUNT_KIND = pronote.kind
 		env.PRONOTE_USERNAME = pronote.username
-		env.PRONOTE_DEVICE_UUID = uuid
+		env.PRONOTE_DEVICE_UUID = deviceUUID
 		envParser.saveEnv(path.join(__dirname, "..", ".env"), env)
 
 		console.log("Fichier .env enregistré !")
@@ -70,9 +62,9 @@ async function askString(question) {
 	}
 
 	// Log quand meme les infos
-	console.log("\nToken de réauthentification:", pronote.nextTimeToken)
-	console.log("ID du compte:", pronote.accountTypeID)
+	console.log("\nToken de réauthentification:", pronote.token)
+	console.log("Type de compte:", pronote.kind)
 	console.log("Nom d'utilisateur:", pronote.username)
-	console.log("UUID de l'appareil:", uuid)
-	console.log("URL de Pronote:", pronote.pronoteRootURL)
+	console.log("UUID de l'appareil:", deviceUUID)
+	console.log("URL de Pronote:", pronote.url)
 })()

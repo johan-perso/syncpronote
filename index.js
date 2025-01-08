@@ -1,5 +1,5 @@
 // Importer les libs
-const { authenticateToken, TimetableActivity, TimetableLesson } = require("pawnote")
+var { createSessionHandle, loginToken, AccountKind, timetableFromIntervals, parseTimetable } = require("pawnote")
 const path = require("path")
 const { CronJob } = require("cron")
 const { google } = require("googleapis")
@@ -57,7 +57,8 @@ function getWeekBounds(){
 	end.setHours(23, 59, 59, 999)
 
 	// Si le premier jour est avant le 2 septembre, on commence à partir du 2 septembre
-	if(start.getTime() < new Date(today.getFullYear(), 8, 2).getTime()) start.setTime(new Date(today.getFullYear(), 8, 2).getTime())
+	// Jsp si on en aura besoin l'année scolaire prochaine, mais là on vient d'passer en 2025 et j'ai capté qu'ça casse tt mdrrrr js le pire dev
+	// if(start.getTime() < new Date(today.getFullYear(), 8, 2).getTime()) start.setTime(new Date(today.getFullYear(), 8, 2).getTime())
 
 	// On retourne les dates
 	return {
@@ -87,6 +88,7 @@ async function main(){
 	console.log(`Connecté à Google ! (${(performance.now() - perf).toFixed(2)}ms)`)
 
 	// Gérer la connexion à Pronote
+	var pronoteHandler
 	var pronoteClient
 	var pronoteToken = dotenv.PRONOTE_TOKEN
 	async function pronoteLogin(){
@@ -94,25 +96,26 @@ async function main(){
 		perf = performance.now()
 		console.log("Authentification à Pronote...")
 		const pronoteDetails = {
-			pronoteRootURL: dotenv.PRONOTE_ROOT_URL,
-			token: pronoteToken,
-			accountTypeID: parseInt(dotenv.PRONOTE_ACCOUNT_TYPE_ID),
+			url: dotenv.PRONOTE_ROOT_URL,
+			kind: dotenv.PRONOTE_ACCOUNT_KIND == "6" ? AccountKind.STUDENT : dotenv.PRONOTE_ACCOUNT_KIND,
 			username: dotenv.PRONOTE_USERNAME,
+			token: pronoteToken,
 			deviceUUID: dotenv.PRONOTE_DEVICE_UUID,
 		}
 
 		// Se connecter à Pronote
-		pronoteClient = await authenticateToken(pronoteDetails.pronoteRootURL, pronoteDetails).catch(async e => {
+		pronoteHandler = createSessionHandle()
+		pronoteClient = await loginToken(pronoteHandler, pronoteDetails).catch(async e => {
 			console.error("Impossible de s'authentifier à Pronote :", e)
-			await new Promise(resolve => setTimeout(resolve, 45000)) // on attends 45sec avant de quitter pour pas spam l'API si on a un redémarrage automatique
+			await new Promise(resolve => setTimeout(resolve, 45000)) // on attends 45sec avant de quitter pour pas spam l'API si on a un redémarrage automatique (pm2 par ex)
 			process.exit(1)
 		})
-		console.log(`Connecté à Pronote en tant que ${pronoteClient.studentName} ! (${(performance.now() - perf).toFixed(2)}ms)`)
-		pronoteClient.startPresenceRequests() // permet de garder la session "en vie"
+		console.log(`Connecté à Pronote en tant que ${pronoteHandler.user.name} ! (${(performance.now() - perf).toFixed(2)}ms)`)
+		if(pronoteClient.startPresenceRequests) pronoteClient.startPresenceRequests(pronoteHandler) // permet de garder la session "en vie"
 
 		// Réenregistrer le token de prochaine connexion (il change à chaque connexion)
-		pronoteToken = pronoteClient.nextTimeToken
-		dotenv.PRONOTE_TOKEN = pronoteClient.nextTimeToken
+		pronoteToken = pronoteClient.token
+		dotenv.PRONOTE_TOKEN = pronoteClient.token
 		envParser.saveEnv(path.join(__dirname, ".env"), dotenv)
 	}
 	await pronoteLogin()
@@ -128,22 +131,23 @@ async function main(){
 		console.log(`Récupération de l'emploi du temps du ${weekBounds.start.toLocaleDateString()} au ${weekBounds.end.toLocaleDateString()}...`)
 		var timetable
 		try {
-			timetable = await pronoteClient.getTimetableOverview(weekBounds.start, weekBounds.end)
+			timetable = await timetableFromIntervals(pronoteHandler, weekBounds.start, weekBounds.end)
 		} catch(e){
 			console.error("Impossible de récupérer l'emploi du temps :", e)
 			if(e.message.includes("The page has expired")) await pronoteLogin()
 		}
 		if(!timetable) return calendar
-		const classes = timetable.parse({
+		parseTimetable(pronoteHandler, timetable, {
 			withSuperposedCanceledClasses: false, // évite d'avoir plusieurs cours sur les mêmes horaires
 			withCanceledClasses: true,
 			withPlannedClasses: true,
 		})
 
 		// Ajouter chaque cours au calendrier
-		classes.forEach((currentClass) => {
+		console.log("before reparsing:", timetable?.classes || timetable)
+		timetable.classes.forEach((currentClass) => {
 			// Si c'est une activité
-			if(currentClass instanceof TimetableActivity){
+			if(currentClass.is == "activity"){
 				calendar.push({
 					type: "activity",
 					start: currentClass.startDate,
@@ -159,7 +163,7 @@ async function main(){
 			}
 
 			// Si c'est un cours classique
-			else if(currentClass instanceof TimetableLesson){
+			else if(currentClass.is == "lesson"){
 				calendar.push({
 					type: "lesson",
 					start: currentClass.startDate,
@@ -177,7 +181,7 @@ async function main(){
 
 		// Retourner le calendrier
 		console.log(`Emploi du temps récupéré ! (${(performance.now() - perf).toFixed(2)}ms)`)
-		console.log(calendar)
+		console.log("after reparsing:", calendar)
 		return calendar
 	}
 

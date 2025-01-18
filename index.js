@@ -1,5 +1,5 @@
 // Importer les libs
-var { createSessionHandle, loginToken, AccountKind, timetableFromIntervals, parseTimetable } = require("pawnote")
+var { startPresenceInterval, createSessionHandle, loginToken, AccountKind, timetableFromIntervals, parseTimetable } = require("pawnote")
 const path = require("path")
 const { CronJob } = require("cron")
 const { google } = require("googleapis")
@@ -111,7 +111,7 @@ async function main(){
 			process.exit(1)
 		})
 		console.log(`Connecté à Pronote en tant que ${pronoteHandler.user.name} ! (${(performance.now() - perf).toFixed(2)}ms)`)
-		if(pronoteClient.startPresenceRequests) pronoteClient.startPresenceRequests(pronoteHandler) // permet de garder la session "en vie"
+		startPresenceInterval(pronoteHandler) // permet de garder la session "en vie"
 
 		// Réenregistrer le token de prochaine connexion (il change à chaque connexion)
 		pronoteToken = pronoteClient.token
@@ -222,7 +222,7 @@ async function main(){
 			perf = performance.now()
 			console.log("Comparaison des événements...")
 			var listChanges = []
-			for(const event of events.data.items){
+			for(const event of (events.data.items || [])){
 				// Parser certaines informations à partir de l'événement
 				var linesDescription = event?.description?.split("\n") || []
 				var uniqueId = linesDescription.find(line => line.startsWith("ID : "))?.replace("ID : ", "") || null

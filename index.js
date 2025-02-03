@@ -238,14 +238,14 @@ async function main(){
 				// Si l'événement n'est pas trouvé dans l'EDT Pronote et qu'il a un ID valide (= ajouté par le bot)
 				if(!eventFromPronoteEdt && uniqueId){
 					var relativeDate = dateToString(new Date(event.start))
-					if(new Date(event.start).getTime() > Date.now()) sendNtfy("Cours supprimé", `Le cours "${unstrikethrough(event.summary.replace(" (annulé)", ""))}" ${relativeDate} à ${new Date(event.start).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" })} est annulé`)
+					// if(new Date(event.start).getTime() > Date.now()) sendNtfy("Cours supprimé", `Le cours "${unstrikethrough(event.summary.replace(" (annulé)", ""))}" ${relativeDate} à ${new Date(event.start).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" })} est annulé`)
 					listChanges.push({ type: "delete-in-google", event: event })
 				}
 
 				// Si l'événement est trouvé dans l'EDT Pronote, mais qu'il est maintenant annulé
 				else if(eventFromPronoteEdt && eventFromPronoteEdt.canceled){
 					var relativeDate = dateToString(new Date(event.start))
-					if(new Date(event.start).getTime() > Date.now()) sendNtfy("Cours annulé", `Le cours "${classnameParser(eventFromPronoteEdt.name)}" ${relativeDate} à ${new Date(event.start).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" })} est annulé`)
+					// if(new Date(event.start).getTime() > Date.now()) sendNtfy("Cours annulé", `Le cours "${classnameParser(eventFromPronoteEdt.name)}" ${relativeDate} à ${new Date(event.start).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" })} est annulé`)
 					listChanges.push({ type: "delete-in-google", event: event })
 				}
 
@@ -302,6 +302,10 @@ async function main(){
 
 					// Si c'est une suppression
 					else if(change.type == "delete-in-google"){
+						console.log("debug info, delete in google: ", event, event.summary)
+						// event.start.dateTime = événement dans le calendrier Google /// event.start = événement dans l'EDT Pronote
+						if(new Date(event.start.dateTime).getTime() > Date.now()) sendNtfy("Cours annulé", `Le cours "${classnameParser(event.summary.replace(" (annulé)", ""))}" ${dateToString(new Date(event.start.dateTime))} à ${new Date(event.start.dateTime).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" })} est annulé`)
+
 						await calendarAPI.events.delete({
 							calendarId: calendarID,
 							eventId: event.id

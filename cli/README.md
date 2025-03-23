@@ -7,5 +7,5 @@
 	> Il faudra rajouter `GOOGLE_CALENDAR_ID` (l'identifiant de l'agenda, similaire à une adresse mail) dans le fichier .env.  
 
 - Autres valeurs optionelles à ajouter manuellement dans le fichier .env :
-	> `NTFY_URL`, `NTFY_USERNAME`, `NTFY_PASSWORD`  
+	> `NTFY_URL`, `NTFY_TOPIC`, `NTFY_USERNAME`, `NTFY_PASSWORD`  
 	> Permet d'envoyer des alertes via un serveur ntfy lorsqu'un cours est modifié ou annulé.

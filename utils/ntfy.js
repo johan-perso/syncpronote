@@ -12,7 +12,7 @@ module.exports = async function(title, message){
 	var statusCode = await fetch(url, {
 		method: "POST",
 		body: JSON.stringify({
-			topic: "pronote",
+			topic: dotenv.NTFY_TOPIC || "pronote",
 			title,
 			message
 		}),

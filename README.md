@@ -34,7 +34,7 @@ node auth-google.js
 
 nano .env
 # Ajouter une ligne `GOOGLE_CALENDAR_ID=` avec l'identifiant de l'agenda Google qui contiendra les nouveaux événements (format similaire à celui d'une adresse mail)
-# Vous pouvez ajouter `NTFY_URL` et `NTFY_USERNAME` + `NTFY_PASSWORD` pour recevoir des notifications lors de la modification ou suppression d'un cours. Le topic utilisé sera `pronote`.
+# Vous pouvez ajouter `NTFY_URL` + `NTFY_TOPIC` et les réglages d'authentification facultatifs (`NTFY_USERNAME` + `NTFY_PASSWORD`) pour recevoir des notifications lors de la modification ou suppression d'un cours. Le topic utilisé sera `pronote`.
 ```
 
 4. Lancer le service

@@ -12,6 +12,7 @@ var names = {
 	"INGEN.INNOV.DEV.DUR.": "2I2D",
 	"INNOVATION TECHNOL.": "Innovation Techno.",
 	"PHYSIQ.CHIMIE&MATHS": "Physique Chimie & Maths",
+	"ENSEIGNEMENT TECHNOLOGIQUE EN LANGUE VIVANTE 1": "ETLV",
 	"ACCOMP.CHOIX ORIENT.": "Accomp. Orientation",
 	"ED.PHYSIQUE & SPORT.": "EPS",
 	"HISTOIRE-GEOGRAPHIE": "Histoire Géo",

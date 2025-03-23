@@ -1,3 +1,5 @@
+console.log("Hello world! (debug from SyncPronote)")
+
 // Importer les libs
 var { startPresenceInterval, createSessionHandle, loginToken, AccountKind, timetableFromIntervals, parseTimetable } = require("pawnote")
 const path = require("path")
@@ -87,6 +89,9 @@ async function main(){
 	}
 	console.log(`Connecté à Google ! (${(performance.now() - perf).toFixed(2)}ms)`)
 
+	const calendarID = dotenv.GOOGLE_CALENDAR_ID
+	const calendarAPI = google.calendar({ version: "v3", auth: googleClient })
+
 	// Gérer la connexion à Pronote
 	var pronoteHandler
 	var pronoteClient
@@ -120,8 +125,8 @@ async function main(){
 	}
 	await pronoteLogin()
 
-	// Fonction : obtenir l'emploi du temps
-	async function getSchedule(){
+	// Fonction : obtenir l'emploi du temps sur Pronote
+	async function getPronoteSchedule(){
 		// Préparer des variables
 		var calendar = []
 		var weekBounds = getWeekBounds()
@@ -158,7 +163,7 @@ async function main(){
 					groups: [],
 					status: currentClass.status,
 					id: generateUniqueIdCourse("activity", currentClass.startDate, currentClass.endDate, currentClass.title),
-					canceled: currentClass?.canceled || false
+					canceled: currentClass?.canceled || currentClass?.exempted?.V?.L?.includes("non obligatoire") || false
 				})
 			}
 
@@ -174,7 +179,7 @@ async function main(){
 					groups: currentClass.groupNames ?? [],
 					status: currentClass.status,
 					id: generateUniqueIdCourse("lesson", currentClass.startDate, currentClass.endDate, currentClass.subject?.name),
-					canceled: currentClass.canceled || false
+					canceled: currentClass?.canceled || currentClass?.exempted?.V?.L?.includes("non obligatoire") || false
 				})
 			}
 		})
@@ -183,6 +188,33 @@ async function main(){
 		console.log(`Emploi du temps récupéré ! (${(performance.now() - perf).toFixed(2)}ms)`)
 		console.log("after reparsing:", calendar)
 		return calendar
+	}
+
+	// Fonction : obtenir l'emploi du temps sur Google
+	async function getGoogleSchedule(silent = false){
+		var perf = performance.now()
+		if(!silent) console.log("Obtention de l'agenda Google...")
+
+		const events = await calendarAPI.events.list({
+			calendarId: calendarID,
+			timeMin: getWeekBounds().start.toISOString(),
+			timeMax: getWeekBounds().end.toISOString(),
+			singleEvents: true,
+			orderBy: "startTime"
+		}).catch(e => {
+			console.error("Impossible de récupérer les événements de l'agenda Google :", e)
+			return null
+		})
+
+		if(events != null && !silent) console.log(`Agenda Google récupéré ! (${(performance.now() - perf).toFixed(2)}ms)`)
+		return events
+	}
+
+	// Vérifier qu'on est bien connecté à Google en récupérant le contenu du calendrier
+	var checkGoogleCalendar = await getGoogleSchedule(true)
+	if(checkGoogleCalendar == null){
+		await new Promise(resolve => setTimeout(resolve, 45000)) // on attends 45sec avant de quitter pour pas spam l'API si on a un redémarrage automatique
+		process.exit(1)
 	}
 
 	// Vérif périodique : modifs dans l'EDT
@@ -194,26 +226,15 @@ async function main(){
 			console.log(`!!! ${new Date().toLocaleString("fr-FR")} !!!`)
 
 			// Obtenir l'emploi du temps
-			var calendar = await getSchedule()
+			var pronoteCalendar = await getPronoteSchedule()
 
 			// Obtenir le calendrier Google
-			var perf = performance.now()
-			console.log("Obtention de l'agenda Google...")
-			const calendarID = dotenv.GOOGLE_CALENDAR_ID
-			const calendarAPI = google.calendar({ version: "v3", auth: googleClient })
-			const events = await calendarAPI.events.list({
-				calendarId: calendarID,
-				timeMin: getWeekBounds().start.toISOString(),
-				timeMax: getWeekBounds().end.toISOString(),
-				singleEvents: true,
-				orderBy: "startTime"
-			}).catch(e => {
-				console.error("Impossible de récupérer les événements de l'agenda Google :", e)
-			})
-			console.log(`Agenda Google récupéré ! (${(performance.now() - perf).toFixed(2)}ms)`)
+			var googleCalendar = await getGoogleSchedule()
+			if(googleCalendar == null) return console.warn("Annulation puisque la récupération Google a échoué...")
+			else console.log(`Agenda Google récupéré ! (${(performance.now() - perf).toFixed(2)}ms)`)
 
 			// Remplacer l'heure annoncée par Pronote par l'heure réelle, si disponible
-			calendar.forEach(event => {
+			pronoteCalendar.forEach(event => {
 				event.start = customHours.correctTime(event.start, "start")
 				event.end = customHours.correctTime(event.end, "end")
 			})
@@ -222,7 +243,7 @@ async function main(){
 			perf = performance.now()
 			console.log("Comparaison des événements...")
 			var listChanges = []
-			for(const event of (events.data.items || [])){
+			for(const event of (googleCalendar.data.items || [])){
 				// Parser certaines informations à partir de l'événement
 				var linesDescription = event?.description?.split("\n") || []
 				var uniqueId = linesDescription.find(line => line.startsWith("ID : "))?.replace("ID : ", "") || null
@@ -233,7 +254,7 @@ async function main(){
 				var canceled = event.summary.startsWith("̶")
 
 				// Trouver l'événement correspondant dans l'EDT Pronote
-				const eventFromPronoteEdt = calendar.find(e => e.id == uniqueId)
+				const eventFromPronoteEdt = pronoteCalendar.find(e => e.id == uniqueId)
 
 				// Si l'événement n'est pas trouvé dans l'EDT Pronote et qu'il a un ID valide (= ajouté par le bot)
 				if(!eventFromPronoteEdt && uniqueId){
@@ -261,9 +282,9 @@ async function main(){
 			}
 
 			// Passer sur tout les éléments de l'EDT Pronote, et vérifier par rapport à l'agenda Google
-			for(const eventFromPronoteEdt of calendar){
+			for(const eventFromPronoteEdt of pronoteCalendar){
 				// Trouver l'événement correspondant dans l'agenda Google
-				const event = events.data.items.find(e => e.description && e.description.split("\nID : ")?.[1] == eventFromPronoteEdt.id)
+				const event = googleCalendar.data.items.find(e => e.description && e.description.split("\nID : ")?.[1] == eventFromPronoteEdt.id)
 
 				// Si l'événement n'est pas trouvé dans l'agenda Google, et que le cours n'est pas annulé
 				if(!event && !eventFromPronoteEdt.canceled) listChanges.push({ type: "add-in-google", event: eventFromPronoteEdt })

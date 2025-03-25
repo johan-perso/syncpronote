@@ -5,13 +5,13 @@ var { startPresenceInterval, createSessionHandle, loginToken, AccountKind, timet
 const path = require("path")
 const { CronJob } = require("cron")
 const { google } = require("googleapis")
-const envParser = require("./utils/env-parser")
+const manageSecrets = require("./utils/manage-secrets")
 const classnameParser = require("./utils/classnames")
 const sendNtfy = require("./utils/ntfy")
 const customHours = require("./utils/custom-hours")
 const { unstrikethrough, strikethrough } = require("./utils/strikethrough")
 
-var dotenv = envParser.parseEnv(path.join(__dirname, ".env"))
+var secrets = manageSecrets.parse(path.join(__dirname, ".config", "secrets.json"))
 
 // Convertir une date en un string human-readable et relatif
 function dateToString(date){
@@ -78,9 +78,9 @@ async function main(){
 	try {
 		googleClient = await google.auth.fromJSON({
 			type: "authorized_user",
-			client_id: dotenv.GOOGLE_CLIENT_ID,
-			client_secret: dotenv.GOOGLE_CLIENT_SECRET,
-			refresh_token: dotenv.GOOGLE_REFRESH_TOKEN
+			client_id: secrets.GOOGLE_CLIENT_ID,
+			client_secret: secrets.GOOGLE_CLIENT_SECRET,
+			refresh_token: secrets.GOOGLE_REFRESH_TOKEN
 		})
 	} catch(e){
 		console.error("Impossible de s'authentifier à Google :", e)
@@ -89,23 +89,23 @@ async function main(){
 	}
 	console.log(`Connecté à Google ! (${(performance.now() - perf).toFixed(2)}ms)`)
 
-	const calendarID = dotenv.GOOGLE_CALENDAR_ID
+	const calendarID = secrets.GOOGLE_CALENDAR_ID
 	const calendarAPI = google.calendar({ version: "v3", auth: googleClient })
 
 	// Gérer la connexion à Pronote
 	var pronoteHandler
 	var pronoteClient
-	var pronoteToken = dotenv.PRONOTE_TOKEN
+	var pronoteToken = secrets.PRONOTE_TOKEN
 	async function pronoteLogin(){
-		// Récupérer les infos de connexion Pronote depuis le .env
+		// Récupérer les infos de connexion Pronote depuis les secrets
 		perf = performance.now()
 		console.log("Authentification à Pronote...")
 		const pronoteDetails = {
-			url: dotenv.PRONOTE_ROOT_URL,
-			kind: dotenv.PRONOTE_ACCOUNT_KIND == "6" ? AccountKind.STUDENT : dotenv.PRONOTE_ACCOUNT_KIND,
-			username: dotenv.PRONOTE_USERNAME,
+			url: secrets.PRONOTE_ROOT_URL,
+			kind: secrets.PRONOTE_ACCOUNT_KIND == "6" ? AccountKind.STUDENT : secrets.PRONOTE_ACCOUNT_KIND,
+			username: secrets.PRONOTE_USERNAME,
 			token: pronoteToken,
-			deviceUUID: dotenv.PRONOTE_DEVICE_UUID,
+			deviceUUID: secrets.PRONOTE_DEVICE_UUID,
 		}
 
 		// Se connecter à Pronote
@@ -120,8 +120,8 @@ async function main(){
 
 		// Réenregistrer le token de prochaine connexion (il change à chaque connexion)
 		pronoteToken = pronoteClient.token
-		dotenv.PRONOTE_TOKEN = pronoteClient.token
-		envParser.saveEnv(path.join(__dirname, ".env"), dotenv)
+		secrets.PRONOTE_TOKEN = pronoteClient.token
+		manageSecrets.save(path.join(__dirname, ".config", "secrets.json"), secrets)
 	}
 	await pronoteLogin()
 

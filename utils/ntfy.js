@@ -1,8 +1,9 @@
 const path = require("path")
-const envParser = require("./env-parser.js")
-var dotenv = envParser.parseEnv(path.join(__dirname, "..", ".env"))
+const manageSecrets = require("./manage-secrets")
 
-var url = dotenv.NTFY_URL
+var secrets = manageSecrets.parse(path.join(__dirname, "..", ".config", "secrets.json"))
+
+var url = secrets.NTFY_URL
 if(url && !url.endsWith("/")) url += "/"
 
 module.exports = async function(title, message){
@@ -12,12 +13,12 @@ module.exports = async function(title, message){
 	var statusCode = await fetch(url, {
 		method: "POST",
 		body: JSON.stringify({
-			topic: dotenv.NTFY_TOPIC || "pronote",
+			topic: secrets.NTFY_TOPIC || "pronote",
 			title,
 			message
 		}),
 		headers: {
-			"Authorization": dotenv.NTFY_USERNAME && dotenv.NTFY_PASSWORD ? `Basic ${Buffer.from(`${dotenv.NTFY_USERNAME}:${dotenv.NTFY_PASSWORD}`).toString("base64")}` : "",
+			"Authorization": secrets.NTFY_USERNAME && secrets.NTFY_PASSWORD ? `Basic ${Buffer.from(`${secrets.NTFY_USERNAME}:${secrets.NTFY_PASSWORD}`).toString("base64")}` : "",
 			"Content-Type": "application/json"
 		}
 	}).then(res => res.status).catch(() => 999)

@@ -1,18 +1,18 @@
 const fs = require("fs")
 const path = require("path")
 const { authenticate } = require("@google-cloud/local-auth")
-const envParser = require("../utils/env-parser")
+const manageSecrets = require("../utils/manage-secrets")
 
-var dotenv = envParser.parseEnv(path.join(__dirname, "..", ".env"))
+var secrets = manageSecrets.parse(path.join(__dirname, "..", ".config", "secrets.json"))
 
 function saveCredentials(client) {
 	const content = fs.readFileSync(path.join(__dirname, "..", "google-credentials.json"))
 	const keys = JSON.parse(content)
 	const key = keys.installed || keys.web
-	dotenv.GOOGLE_CLIENT_ID = key.client_id
-	dotenv.GOOGLE_CLIENT_SECRET = key.client_secret
-	dotenv.GOOGLE_REFRESH_TOKEN = client.credentials.refresh_token
-	envParser.saveEnv(path.join(__dirname, "..", ".env"), dotenv)
+	secrets.GOOGLE_CLIENT_ID = key.client_id
+	secrets.GOOGLE_CLIENT_SECRET = key.client_secret
+	secrets.GOOGLE_REFRESH_TOKEN = client.credentials.refresh_token
+	manageSecrets.save(path.join(__dirname, "..", ".config", "secrets.json"), secrets)
 }
 
 async function authorize() {
@@ -24,4 +24,4 @@ async function authorize() {
 	console.log("Connexion réussie")
 }
 
-authorize().then(() => console.log("Enregistré dans le fichier .env")).catch(console.error)
+authorize().then(() => console.log("Enregistré dans le fichier .config/secrets.json")).catch(console.error)

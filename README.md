@@ -5,8 +5,8 @@ Un service en arrière-plan qui synchronise votre emploi du temps Pronote sur Go
 
 ## Installation
 
-> Vous aurez besoin d'une version récente de [Node.js](https://nodejs.org/en/)  
-> Vous pouvez installer [pm2](https://www.npmjs.com/package/pm2) pour démarrer le service en arrière-plan  
+> Vous aurez besoin d'une version récente de [Node.js](https://nodejs.org/en/)
+> Vous pouvez installer [pm2](https://www.npmjs.com/package/pm2) pour démarrer le service en arrière-plan
 > Vous pouvez installer [ntfy](https://ntfy.sh/) pour recevoir des notifications lors de certaines actions apportées à l'EDT
 
 1. Cloner le dépôt
@@ -32,8 +32,10 @@ node auth-google.js
 # Suivez les instructions pour configurer l'accès à Google Calendar
 # Important : un fichier `google-credentials.json` doit exister à la racine du projet, il doit correspondre au fichier JSON téléchargé sur le dashboard Google (détails d'authentification du client, choissisez "application de bureau")
 
-nano .env
-# Ajouter une ligne `GOOGLE_CALENDAR_ID=` avec l'identifiant de l'agenda Google qui contiendra les nouveaux événements (format similaire à celui d'une adresse mail)
+mv .config/secrets.example.json .config/secrets.json
+nano .config/secrets.json
+# (!) Sur Docker, vous devrez créer un volume pour `.config/secrets.json` puisqu'il est modifiée automatiquement à chaque reconnexion à Pronote
+# Ajouter une valeur `GOOGLE_CALENDAR_ID` avec l'identifiant de l'agenda Google qui contiendra les nouveaux événements (format similaire à celui d'une adresse mail)
 # Vous pouvez ajouter `NTFY_URL` + `NTFY_TOPIC` et les réglages d'authentification facultatifs (`NTFY_USERNAME` + `NTFY_PASSWORD`) pour recevoir des notifications lors de la modification ou suppression d'un cours. Le topic utilisé sera `pronote`.
 ```
 

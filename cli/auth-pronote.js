@@ -1,8 +1,8 @@
 var { loginQrCode, createSessionHandle } = require("pawnote")
 var readline = require("readline")
 var path = require("path")
-const envParser = require("../utils/env-parser")
 const { randomUUID } = require("crypto")
+const manageSecrets = require("../utils/manage-secrets")
 
 // Fonction pour demander un string
 async function askString(question) {
@@ -49,15 +49,15 @@ async function askString(question) {
 	if (saveDetails.toLowerCase() === "y" || saveDetails === "") {
 		console.log("Enregistrement des détails...")
 
-		var env = envParser.parseEnv(path.join(__dirname, "..", ".env"))
-		env.PRONOTE_ROOT_URL = pronote.url
-		env.PRONOTE_TOKEN = pronote.token
-		env.PRONOTE_ACCOUNT_KIND = pronote.kind
-		env.PRONOTE_USERNAME = pronote.username
-		env.PRONOTE_DEVICE_UUID = deviceUUID
-		envParser.saveEnv(path.join(__dirname, "..", ".env"), env)
+		var secrets = manageSecrets.parse(path.join(__dirname, "..", ".config", "secrets.json"))
+		secrets.PRONOTE_ROOT_URL = pronote.url
+		secrets.PRONOTE_TOKEN = pronote.token
+		secrets.PRONOTE_ACCOUNT_KIND = pronote.kind
+		secrets.PRONOTE_USERNAME = pronote.username
+		secrets.PRONOTE_DEVICE_UUID = deviceUUID
+		manageSecrets.save(path.join(__dirname, "..", ".config", "secrets.json"), secrets)
 
-		console.log("Fichier .env enregistré !")
+		console.log("Enregistré dans le fichier .config/secrets.json")
 		console.log("Note : ce fichier ne doit pas être partagé, penser à l'ajouter à votre .gitignore.")
 	}
 

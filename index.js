@@ -217,6 +217,14 @@ async function main(){
 		process.exit(1)
 	}
 
+	// Uptime
+	if(secrets.UPTIME_PING_URL) setInterval(() => {
+		fetch(secrets.UPTIME_PING_URL).then(res => res.statusText).then(res => {
+			if(res == "OK") console.log(`Uptime Ping: ${res}`)
+			else console.warn(`Uptime Ping: ${res}`)
+		})
+	}, 120 * 1000) // toutes les 2 minutes
+
 	// Vérif périodique : modifs dans l'EDT
 	console.log("En attente de la prochaine vérification périodique (toutes les 30 minutes entre 6h et 21h)...")
 	CronJob.from({

@@ -64,4 +64,4 @@ Personnaliser le nom des matières :
 
 ## Licence
 
-MIT © [Johan](https://johanstick.fr). Soutenez moi via [Ko-Fi](https://ko-fi.com/johan_stickman) ou [PayPal](https://paypal.me/moipastoii) si vous souhaitez m'aider 💙
+MIT © [Johan](https://johanstick.fr). [Soutenez ce projet](https://johanstick.fr/#donate) si vous souhaitez m'aider 💙
